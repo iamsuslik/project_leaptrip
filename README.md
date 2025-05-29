@@ -77,7 +77,7 @@
 ##### Ошибки:
 -  400: Username already registered
 -  400: Email already registered
-##### `POST /login` - Вход пользователя (по email или username).
+#### `POST /login` - Вход пользователя (по email или username).
 
 ##### Request Body:  (UserLoginSchema):
 ```
