@@ -132,8 +132,7 @@
 -  404: No flights found
 -  500: Internal server error
 ### 3. Поиск отелей
-#### POST /hotels/search
-##### Описание: Поиск отелей через API Hotellook.
+#### `POST /hotels/search`- Поиск отелей через API Hotellook.
 ##### Request Body (HotelRequest):
 ```
 {
