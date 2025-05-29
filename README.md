@@ -71,7 +71,6 @@
 
 ##### Response:
 ```http
-```http
 {
   "message": "User created successfully"
 }
