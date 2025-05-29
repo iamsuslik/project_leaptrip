@@ -68,7 +68,107 @@
   "password": "string"
 }
 ```
+
 ##### Response:
 ```
 {"message": "User created successfully"}
 ```
+
+##### Ошибки:
+-  400: Username already registered
+-  400: Email already registered
+##### POST /login - Вход пользователя (по email или username).
+
+##### Request Body:  (UserLoginSchema):
+```
+{
+  "username_or_email": "string",
+  "password": "string"
+}
+```
+##### Response:
+```
+{
+  "access_token": "string"
+}
+```
+##### Ошибки:
+-  401: User not found or inactive
+-  401: Incorrect password
+
+### 2. Поиск авиабилетов
+#### POST /flights/search
+##### Описание: Поиск авиабилетов через API Travelpayouts.
+##### Request Body (FlightRequest):
+```
+{
+  "fromCity": "string",
+  "toCity": "string",
+  "departureDate": "string (YYYY-MM-DD)",
+  "returnDate": "string (YYYY-MM-DD)",
+  "one_way": "boolean",
+  "direct": "boolean",
+  "limit": "integer"
+}
+```
+##### Response: (FlightResponse):
+```
+[
+{
+  "airline": "string",
+  "flight_number": "string",
+  "departure_at": "string (YYYY-MM-DD HH:MM)",
+  "return_at": "string (YYYY-MM-DD HH:MM)",
+  "price": "integer",
+  "transfers": "string",
+  "duration": "string",
+  "booking_url": "string"
+}
+]
+```
+##### Ошибки:
+-  400: Invalid city name or IATA code
+-  400: Departure date must be in the future
+-  400: Return date must be after departure
+-  404: No flights found
+-  500: Internal server error
+### 3. Поиск отелей
+#### POST /hotels/search
+##### Описание: Поиск отелей через API Hotellook.
+##### Request Body (HotelRequest):
+```
+{
+  "city": "string",
+  "check_in": "string",
+  "check_out": "string",
+  "adults": 2,
+  "stars": [3, 4, 5], 
+  "price_min": 0,           
+  "price_max": 0,
+  "limit": 10
+}
+```
+##### Проверки:
+- Корректность дат (check_out > check_in).
+- Фильтрация по звездам, цене и другим параметрам.
+
+##### Response (List[HotelResponse]):
+```
+[
+  {
+    "name": "string",
+    "stars": 0,
+    "price": 0,             // Общая цена за период
+    "price_per_night": 0,   // Цена за ночь
+    "location": {           // Координаты
+      "lat": 0,
+      "lon": 0
+    },
+    "booking_url": "string" // Ссылка на бронирование
+  }
+]
+```
+##### Ошибки:
+400: Неверные даты или параметры.
+404: Отели не найдены.
+500: Ошибка сервера.
