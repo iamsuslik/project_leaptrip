@@ -69,8 +69,3 @@
   "password": "string"
 }
 
-##### Response:
-```http
-{
-  "message": "User created successfully"
-}
