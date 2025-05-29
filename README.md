@@ -61,7 +61,6 @@
 
 #### `POST /register` - Регистрация нового пользователя
 ##### Request Body:
-```http
 
 {
   "username": "string",
@@ -69,3 +68,4 @@
   "password": "string"
 }
 
+{"message": "User created successfully"}
