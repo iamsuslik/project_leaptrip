@@ -61,11 +61,14 @@
 
 #### `POST /register` - Регистрация нового пользователя
 ##### Request Body:
-
+```
 {
   "username": "string",
   "email": "string",
   "password": "string"
 }
-
+```
+##### Response:
+```
 {"message": "User created successfully"}
+```
