@@ -74,4 +74,3 @@
 {
   "message": "User created successfully"
 }
-```http
