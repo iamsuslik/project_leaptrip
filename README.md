@@ -166,6 +166,41 @@
   }
 ]
 ```
+# 🧳 Travel Planner Telegram Bot (GigaChat Integration)
+
+<div align="center">
+  <img src="https://img.shields.io/badge/Python-3.9+-blue?logo=python" alt="Python">
+  <img src="https://img.shields.io/badge/Telegram%20Bot-API-blue?logo=telegram" alt="Telegram">
+  <img src="https://img.shields.io/badge/GigaChat-API-green" alt="GigaChat">
+</div>
+
+## 📌 Описание
+Telegram-бот для подбора идеального города путешествия с использованием GigaChat API. Бот задает пользователю серию вопросов и на основе ответов генерирует персонализированные рекомендации.
+
+## ✨ Особенности
+- Интерактивный диалог с пользователем
+- Интеграция с GigaChat API для генерации рекомендаций
+- Поддержка Markdown в сообщениях
+- Клавиатура с вариантами ответов
+- Возможность прервать диалог в любой момент
+
+## 🛠 Технологии
+- `python-telegram-bot` v20+ - работа с Telegram API
+- `gigachat` - взаимодействие с GigaChat API
+- `requests` - HTTP-запросы
+
+## 🗂 Структура кода
+
+### Основные функции
+```python
+def generate_with_gigachat(prompt: str) -> str:
+    """Генерация ответа через GigaChat API"""
+    try:
+        with GigaChat(credentials=GIGACHAT_CREDENTIALS, verify_ssl_certs=False, scope=GIGACHAT_SCOPE) as giga:
+            response = giga.chat(prompt)
+            return response.choices[0].message.content
+    except Exception as e:
+        return f"Ошибка API GigaChat: {str(e)}"
 ##### Ошибки:
 - 400: Неверные даты или параметры.
 - 404: Отели не найдены.
