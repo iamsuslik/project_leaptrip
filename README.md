@@ -1,48 +1,78 @@
-# 🧸 Планирование путешествий с использованием LLM (Travel Planner with LLM) ✈️
+# <img src="https://cdn-icons-png.flaticon.com/512/2906/2906274.png" width="40" height="40" alt="Travel Planner Icon"/> Travel Planner with LLM
+
+Проект представляет собой мобильное приложение для планирования путешествий с использованием языковых моделей (LLM) для генерации рекомендаций.
 
 <div align="center">
-  <img src="https://img.shields.io/badge/Python-3.9+-blue?logo=python" alt="Python">
-  <img src="https://img.shields.io/badge/FastAPI-0.68+-green?logo=fastapi" alt="FastAPI">
-  <img src="https://img.shields.io/badge/PostgreSQL-13+-blue?logo=postgresql" alt="PostgreSQL">
-  <img src="https://img.shields.io/badge/Docker-20.10+-blue?logo=docker" alt="Docker">
+  <img src="https://img.shields.io/badge/Kotlin-Android-blue?logo=kotlin" alt="Kotlin">
+  <img src="https://img.shields.io/badge/Python-FastAPI-green?logo=python" alt="Python">
+  <img src="https://img.shields.io/badge/PostgreSQL-Database-blue?logo=postgresql" alt="PostgreSQL">
+  <img src="https://img.shields.io/badge/Docker-Containers-blue?logo=docker" alt="Docker">
 </div>
 
-## 📝 Описание проекта
-Мобильное приложение для интеллектуального планирования путешествий с использованием языковых моделей. Сервис предоставляет:
+## Описание проекта
 
-✔️ Персонализированные рекомендации по направлениям  
-✔️ Умный поиск авиабилетов и отелей  
-✔️ Интеграцию с Telegram-ботом для консультаций  
-✔️ Удобное управление своими путешествиями  
+Сервис предоставляет следующие возможности:
+- Регистрация и авторизация пользователей
+- Поиск авиабилетов по заданным параметрам
+- Поиск отелей по заданным критериям
+- Telegram-бот с LLM (GigaChat) для рекомендаций по путешествиям
 
-## 🛠 Технологический стек
+## Архитектура
 
-### Backend
-| Технология | Назначение |
-|------------|------------|
-| Python 3.9+ | Основной язык |
-| FastAPI | Веб-фреймворк |
-| PostgreSQL | База данных |
-| GigaChat | Языковая модель |
-| Docker | Контейнеризация |
+<div align="center">
+<pre>
+┌──────────────────────┐
+│     <b>User</b>             │
+│ (Mobile App/Web)     │
+└──────────┬───────────┘
+           │ JWT Auth
+           ▼
+┌──────────────────────┐
+│    <b>Backend Service</b>   │
+│ ┌──────────────────┐ │
+│ │   <b>HTTP API</b>       │ │
+│ │ - Auth           │ │
+│ │ - Flights        │ │
+│ │ - Hotels         │ │
+│ └────────┬─────────┘ │
+│          │           │
+│          │ Database  │
+│          │ Queries   │
+│          ▼           │
+│ ┌──────────────────┐ │
+│ │  <b>PostgreSQL</b>      │ │
+│ │  Database        │ │
+│ └──────────────────┘ │
+└──────────────────────┘
+</pre>
+</div>
 
-### Frontend
-| Технология | Назначение |
-|------------|------------|
-| Kotlin | Мобильное приложение |
-| Jetpack Compose | UI компоненты |
+## Технологический стек
 
-## 📚 API Документация
+**Frontend**:  
+<img src="https://cdn-icons-png.flaticon.com/512/226/226777.png" width="20" height="20" alt="Java"/> Kotlin (Android)
 
-### 🔐 Аутентификация
+**Backend**:  
+<img src="https://cdn-icons-png.flaticon.com/512/5968/5968350.png" width="20" height="20" alt="Python"/> Python (FastAPI)  
+<img src="https://cdn-icons-png.flaticon.com/512/4299/4299956.png" width="20" height="20" alt="GigaChat"/> GigaChat (LLM)  
+<img src="https://cdn-icons-png.flaticon.com/512/5968/5968342.png" width="20" height="20" alt="PostgreSQL"/> PostgreSQL  
+<img src="https://cdn-icons-png.flaticon.com/512/6132/6132222.png" width="20" height="20" alt="HTTPX"/> HTTPX (HTTP клиент)
 
-#### Регистрация пользователя
+**Инфраструктура**:  
+<img src="https://cdn-icons-png.flaticon.com/512/919/919853.png" width="20" height="20" alt="Docker"/> Docker & Docker Compose  
+<img src="https://cdn-icons-png.flaticon.com/512/2111/2111708.png" width="20" height="20" alt="Swagger"/> OpenAPI (Swagger)
+
+## API Документация
+
+### 1. Аутентификация
+
+#### `POST /register` - Регистрация нового пользователя
 ```http
 POST /register
 Content-Type: application/json
 
 {
   "username": "string",
-  "email": "email@example.com",
+  "email": "string",
   "password": "string"
 }
