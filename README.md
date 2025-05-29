@@ -2,13 +2,6 @@
 
 Проект представляет собой мобильное приложение для планирования путешествий с использованием языковых моделей (LLM) для генерации рекомендаций.
 
-<div align="center">
-  <img src="https://img.shields.io/badge/Kotlin-Android-blue?logo=kotlin" alt="Kotlin">
-  <img src="https://img.shields.io/badge/Python-FastAPI-green?logo=python" alt="Python">
-  <img src="https://img.shields.io/badge/PostgreSQL-Database-blue?logo=postgresql" alt="PostgreSQL">
-  <img src="https://img.shields.io/badge/Docker-Containers-blue?logo=docker" alt="Docker">
-</div>
-
 ## Описание проекта
 
 Сервис предоставляет следующие возможности:
@@ -25,8 +18,8 @@
 │     <b>User</b>             │
 │ (Mobile App/Web)     │
 └──────────┬───────────┘
-           │ JWT Auth
-           ▼
+        │ JWT Auth
+      ▼
 ┌──────────────────────┐
 │    <b>Backend Service</b>   │
 │ ┌──────────────────┐ │
