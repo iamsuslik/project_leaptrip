@@ -77,7 +77,7 @@
 ##### Ошибки:
 -  400: Username already registered
 -  400: Email already registered
-##### POST /login - Вход пользователя (по email или username).
+##### `POST /login` - Вход пользователя (по email или username).
 
 ##### Request Body:  (UserLoginSchema):
 ```
@@ -97,8 +97,7 @@
 -  401: Incorrect password
 
 ### 2. Поиск авиабилетов
-#### POST /flights/search
-##### Описание: Поиск авиабилетов через API Travelpayouts.
+#### `POST /flights/search` - Поиск авиабилетов через API Travelpayouts.
 ##### Request Body (FlightRequest):
 ```
 {
