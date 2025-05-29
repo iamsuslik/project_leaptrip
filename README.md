@@ -61,8 +61,6 @@
 
 #### `POST /register` - Регистрация нового пользователя
 ```http
-POST /register
-Content-Type: application/json
 
 {
   "username": "string",
