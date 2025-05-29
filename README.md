@@ -150,7 +150,7 @@
 - Корректность дат (check_out > check_in).
 - Фильтрация по звездам, цене и другим параметрам.
 
-##### Response (List[HotelResponse]):
+##### Response (HotelResponse):
 ```
 [
   {
