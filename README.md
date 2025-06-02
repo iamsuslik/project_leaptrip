@@ -222,8 +222,7 @@ Telegram-бот для подбора идеального города путе
 ```
 
 ## 📱 Приложение
-<img src="images/Рисунок1.png" alt="бот" width="200"> <img src="images/Рисунок2.png" alt="бот" width="200"> <img src="images/Рисунок3.png" alt="бот" width="200"> <img src="images/Рисунок5.png" alt="бот" width="200"> <img src="images/Рисунок6.png" alt="бот" width="200"> <img src="images/Рисунок7.png" alt="бот" width="200"> <img src="images/Рисунок8.png" alt="бот" width="200"> <img src="images/Рисунок9.png" alt="бот" width="200"> <img src="images/Рисунок10.png" alt="бот" width="200"> <img src="images/Рисунок11.png" alt="бот" width="200"> 
-
+<img src="images/photo_5328038885424493434_y.jpg" alt="бот" width="200"> <img src="images/photo_5328038885424493435_y.jpg" alt="бот" width="200"> <img src="images/photo_5328038885424493436_y.jpg" alt="бот" width="200"> <img src="images/photo_5328038885424493437_y.jpg" alt="бот" width="200"> <img src="images/photo_5328038885424493438_y.jpg" alt="бот" width="200"> <img src="images/photo_5328038885424493439_y.jpg" alt="бот" width="200"> <img src="images/photo_5328038885424493440_y.jpg" alt="бот" width="200"> <img src="images/photo_5328038885424493441_y.jpg" alt="бот" width="200"> <img src="images/photo_5328038885424493442_y.jpg" alt="бот" width="200">
 ## 👥 Команда
 **Frontend** 🎨
 - Лоскутова Анастасия
