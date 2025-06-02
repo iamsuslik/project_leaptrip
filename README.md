@@ -222,7 +222,7 @@ Telegram-бот для подбора идеального города путе
 ```
 
 ## 📱 Приложение
-<img src="images/photo_5314616073242409761_y.jpg" alt="бот" width="200"> <img src="images/photo_5314616073242409762_y.jpg" alt="бот" width="200"> <img src="images/photo_5314616073242409763_y.jpg" alt="бот" width="200"> <img src="images/photo_5314616073242409764_y.jpg" alt="бот" width="200"> <img src="images/photo_5314616073242409765_y.jpg" alt="бот" width="200">
+<img src="images/Рисунок1.png" alt="бот" width="200"> <img src="images/Рисунок2.png" alt="бот" width="200"> <img src="images/Рисунок3.png" alt="бот" width="200"> <img src="images/Рисунок5.png" alt="бот" width="200"> <img src="images/Рисунок6.png" alt="бот" width="200"> <img src="images/Рисунок7.png" alt="бот" width="200"> <img src="images/Рисунок8.png" alt="бот" width="200"> <img src="images/Рисунок9.png" alt="бот" width="200"> <img src="images/Рисунок10.png" alt="бот" width="200"> <img src="images/Рисунок11.png" alt="бот" width="200"> 
 
 ## 👥 Команда
 **Frontend** 🎨
@@ -233,5 +233,4 @@ Telegram-бот для подбора идеального города путе
 - Ельцова Дарья
 - Василянская Алена
 - Баженова Дарья
-
 
