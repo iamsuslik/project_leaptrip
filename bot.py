@@ -9,8 +9,9 @@ from telegram.ext import (
 )
 import requests
 from gigachat import GigaChat
+import os
 
-GIGACHAT_CREDENTIALS = "..."  
+GIGACHAT_CREDENTIALS = os.getenv("GIGACHAT_CREDENTIALS") 
 GIGACHAT_SCOPE = "GIGACHAT_API_PERS" 
 
 TYPE, BUDGET, CLIMATE, DURATION, COMPANION = range(5)
