@@ -43,7 +43,7 @@
 ## 🛠 Технологический стек
 
 **Frontend**:  
-<img src="https://cdn-icons-png.flaticon.com/512/226/226777.png" width="20" height="20" alt="Java"/> Kotlin (Android)
+Kotlin (Android)
 
 **Backend**:  
 <img src="https://cdn-icons-png.flaticon.com/512/5968/5968350.png" width="20" height="20" alt="Python"/> Python (FastAPI)  
@@ -234,6 +234,4 @@ Telegram-бот для подбора идеального города путе
 - Василянская Алена
 - Баженова Дарья
 
-## 🌐 Документация
-**ссылка на сервер**
 
