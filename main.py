@@ -1,23 +1,29 @@
 from contextlib import asynccontextmanager
-from fastapi import Depends, FastAPI, HTTPException, Request, Response
-from authx import AuthX, AuthXConfig
+from django.http import FileResponse
+from fastapi import Depends, FastAPI, HTTPException, Request, Response, status
+from authx import AuthX, AuthXConfig, TokenPayload
 from pydantic import BaseModel, Field, validator
 from databases import Database
 from sqlalchemy import create_engine, MetaData, Table, Column, String, Boolean, Integer, UniqueConstraint
 from passlib.context import CryptContext
 import re
+import os
 from typing import List, Optional
 from datetime import datetime
 from fastapi.templating import Jinja2Templates 
 import httpx
 from cachetools import TTLCache
+from fastapi.middleware.cors import CORSMiddleware
 from dateutil import parser, tz
 import logging
+from dotenv import load_dotenv
 
-
+load_dotenv()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-DATABASE_URL = "postgresql+asyncpg://postgres:...@localhost:5432/testv0"
+
+
+DATABASE_URL = os.getenv("DATABASE_URL")
 database = Database(DATABASE_URL)
 metadata = MetaData()
 
@@ -53,8 +59,16 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 
-templates = Jinja2Templates(directory="templates")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], 
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
+
+templates = Jinja2Templates(directory="templates")
 cache = TTLCache(maxsize=100, ttl=3600)
     
 
@@ -63,6 +77,7 @@ config = AuthXConfig()
 config.JWT_SECRET_KEY = "SECRET_KEY"
 config.JWT_ACCESS_COOKIE_NAME = "my_access_token"
 config.JWT_TOKEN_LOCATION = ["cookies"]
+config.JWT_IDENTITY_CLAIM = "sub"
 
 security = AuthX(config=config)
 
@@ -78,7 +93,6 @@ class UserCreateSchema(BaseModel):
     password: str
 
 def is_valid_email(email: str) -> bool:
-    """Validate email format using regex"""
     pattern = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
     return re.match(pattern, email) is not None
 
@@ -86,61 +100,302 @@ def is_valid_email(email: str) -> bool:
 async def home():
     return {"message": "Welcome to the API!"}
 
+
+
+# @app.post("/register")
+# async def register(user: UserCreateSchema):
+#     print(f"🔹 Регистрация пользователя: {user.username}")  # Лог 1
+    
+#     # Check if username already exists
+#     query = users.select().where(users.c.username == user.username)
+#     existing_user = await database.fetch_one(query)
+    
+#     if existing_user:
+#         print("🔴 Пользователь уже существует!")  # Лог 2
+#         raise HTTPException(status_code=400, detail="Username already registered")
+    
+#     # Check if email already exists
+#     query = users.select().where(users.c.email == user.email)
+#     existing_email = await database.fetch_one(query)
+    
+#     if existing_email:
+#         print("🔴 Email уже зарегистрирован!")  # Лог 2
+#         raise HTTPException(status_code=400, detail="Email already registered")
+    
+#     hashed_password = pwd_context.hash(user.password)
+#     print(f"🔹 Хеш пароля: {hashed_password}")  # Лог 3
+    
+#     query = users.insert().values(
+#         username=user.username,
+#         email=user.email,
+#         password=hashed_password,
+#         is_active=True
+#     )
+#     await database.execute(query)
+#     print("🟢 Пользователь добавлен в БД!")  # Лог 4
+    
+#     return {"message": "User created successfully"}
+
 @app.post("/register")
-async def register(user: UserCreateSchema):
-    print(f"🔹 Регистрация пользователя: {user.username}")  
+async def register(
+    user: UserCreateSchema, 
+    response: Response,
+    request: Request  # Для логирования
+):
+    print(f"\n🔹 Регистрация пользователя: {user.username}")
+    print(f"🔸 IP: {request.client.host if request.client else 'unknown'}")
+
+    try:
+        # Проверка существующего username
+        query = users.select().where(users.c.username == user.username)
+        existing_user = await database.fetch_one(query)
+        
+        if existing_user:
+            print("🔴 Пользователь уже существует!")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Username already registered"
+            )
+        
+        # Проверка существующего email
+        query = users.select().where(users.c.email == user.email)
+        existing_email = await database.fetch_one(query)
+        
+        if existing_email:
+            print("🔴 Email уже зарегистрирован!")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email already registered"
+            )
+        
+        # Хеширование пароля
+        hashed_password = pwd_context.hash(user.password)
+        print(f"🔹 Хеш пароля: {hashed_password}")
+        
+        # Создание пользователя
+        query = users.insert().values(
+            username=user.username,
+            email=user.email,
+            password=hashed_password,
+            is_active=True
+        )
+        user_id = await database.execute(query)
+        print("🟢 Пользователь добавлен в БД!")
+
+        # Создание токена для нового пользователя
+        token = security.create_access_token(uid=user.username)
+        print(f"🔹 Сгенерирован токен для {user.username}")
+
+        # Установка токена в куки
+        response.set_cookie(
+            key=config.JWT_ACCESS_COOKIE_NAME,
+            value=token,
+            httponly=True,
+            secure=False,
+            samesite="lax",
+            max_age=config.JWT_ACCESS_TOKEN_EXPIRES.total_seconds(),
+            path="/",
+        )
+
+        print("🟢 Регистрация и аутентификация успешны")
+        print(f"🔹 Token: {token[:15]}...")
+
+        return {
+            "message": "User created and authenticated successfully",
+            "access_token": token,
+            "token_type": "bearer",
+            "user_id": user_id,
+            "username": user.username
+        }
+
+    except Exception as e:
+        print(f"🔴 Ошибка регистрации: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error during registration"
+        )
+
+# @app.post("/login")
+# async def login(creds: UserLoginSchema, response: Response):
+#     # Determine if login is by email or username
+#     if is_valid_email(creds.username_or_email):
+#         query = users.select().where(users.c.email == creds.username_or_email)
+#     else:
+#         query = users.select().where(users.c.username == creds.username_or_email)
     
-    query = users.select().where(users.c.username == user.username)
-    existing_user = await database.fetch_one(query)
+#     user = await database.fetch_one(query)
     
-    if existing_user:
-        print("🔴 Пользователь уже существует!")
-        raise HTTPException(status_code=400, detail="Username already registered")
+#     if not user or not user.is_active:
+#         raise HTTPException(status_code=401, detail="User not found or inactive")
     
-    query = users.select().where(users.c.email == user.email)
-    existing_email = await database.fetch_one(query)
+#     if not pwd_context.verify(creds.password, user.password):
+#         raise HTTPException(status_code=401, detail="Incorrect password")
     
-    if existing_email:
-        print("🔴 Email уже зарегистрирован!") 
-        raise HTTPException(status_code=400, detail="Email already registered")
-    
-    hashed_password = pwd_context.hash(user.password)
-    print(f"🔹 Хеш пароля: {hashed_password}") 
-    
-    query = users.insert().values(
-        username=user.username,
-        email=user.email,
-        password=hashed_password,
-        is_active=True
-    )
-    await database.execute(query)
-    print("🟢 Пользователь добавлен в БД!")  # Лог 4
-    
-    return {"message": "User created successfully"}
+#     token = security.create_access_token(uid=user.username)
+#     response.set_cookie(config.JWT_ACCESS_COOKIE_NAME, token)
+#     return {"access_token": token}
 
 
 @app.post("/login")
-async def login(creds: UserLoginSchema, response: Response):
-    # Determine if login is by email or username
-    if is_valid_email(creds.username_or_email):
-        query = users.select().where(users.c.email == creds.username_or_email)
-    else:
-        query = users.select().where(users.c.username == creds.username_or_email)
-    
-    user = await database.fetch_one(query)
-    
-    if not user or not user.is_active:
-        raise HTTPException(status_code=401, detail="User not found or inactive")
-    
-    if not pwd_context.verify(creds.password, user.password):
-        raise HTTPException(status_code=401, detail="Incorrect password")
-    
-    token = security.create_access_token(uid=user.username)
-    response.set_cookie(config.JWT_ACCESS_COOKIE_NAME, token)
-    return {"access_token": token}
+async def login(
+    creds: UserLoginSchema,
+    response: Response,
+    request: Request  # Добавим для логирования
+):
+    # Логирование входящего запроса
+    print(f"\n🔹 Login attempt for: {creds.username_or_email}")
+    print(f"🔸 IP: {request.client.host if request.client else 'unknown'}")
+
+    try:
+        # Определяем тип авторизации (email/username)
+        if is_valid_email(creds.username_or_email):
+            query = users.select().where(users.c.email == creds.username_or_email)
+            auth_type = "email"
+        else:
+            query = users.select().where(users.c.username == creds.username_or_email)
+            auth_type = "username"
+
+        print(f"🔹 Auth type: {auth_type}")
+
+        user = await database.fetch_one(query)
+
+        # Проверка пользователя
+        if not user:
+            print("🔴 User not found")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found"
+            )
+
+        if not user.is_active:
+            print("🔴 User inactive")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="User inactive"
+            )
+
+        if not pwd_context.verify(creds.password, user.password):
+            print("🔴 Invalid password")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect password"
+            )
+
+        token = security.create_access_token(uid=user.username)
+        print(f"🔹 Generated token for {user.username}")
+
+        response.set_cookie(
+            key=config.JWT_ACCESS_COOKIE_NAME,
+            value=token,
+            httponly=True,
+            secure=False,
+            samesite="lax",
+            max_age=config.JWT_ACCESS_TOKEN_EXPIRES.total_seconds(),
+            path="/",
+        )
+
+        print("🟢 Login successful")
+        print(f"🔹 Token: {token[:15]}...")
+
+        return {
+            "access_token": token,
+            "token_type": "bearer",
+            "user_id": user.id,
+            "username": user.username
+        }
+
+    except Exception as e:
+        print(f"🔴 Login error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error during login"
+        )
 
 
 
+
+# class UserResponse(BaseModel):
+#     id: int
+#     username: str
+#     email: str
+#     is_active: bool
+
+# @app.get("/user", response_model=UserResponse)
+# async def get_current_user(
+#     current_user: str = Depends(security.access_token_required)
+# ):
+#     username = current_user
+    
+#     query = users.select().where(users.c.username == username)
+#     user = await database.fetch_one(query)
+    
+#     if not user:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND,
+#             detail="User not found"
+#         )
+    
+#     if not user.is_active:
+#         raise HTTPException(
+#             status_code=status.HTTP_403_FORBIDDEN,
+#             detail="User inactive"
+#         )
+    
+#     return {
+#         "id": user.id,
+#         "username": user.username,
+#         "email": user.email,
+#         "is_active": user.is_active
+#     }
+
+
+
+class UserResponse(BaseModel):
+    id: int
+    username: str
+    email: str
+    is_active: bool
+
+@app.get("/user")
+async def get_current_user(
+    token_payload: TokenPayload = Depends(security.access_token_required)
+):
+    logger.debug(f"Received token payload: {token_payload}")
+    try:
+        username = token_payload.sub
+        if not username:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token: missing username"
+            )
+
+        query = users.select().where(users.c.username == username)
+        user = await database.fetch_one(query)
+
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+
+        if not user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="User inactive"
+            )
+
+        return {
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "is_active": user.is_active
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}"
+        )
 
 ####################################################################################################
 #  парсинг авиабилетов 
@@ -150,28 +405,118 @@ logger = logging.getLogger(__name__)
 
 
 API_URL = "https://api.travelpayouts.com/aviasales/v3/prices_for_dates"
-API_TOKEN = "..."
+API_TOKEN = os.getenv("API_TOKEN")
 TIMEOUT = 30
 
 AIRLINE_NAMES = {
-    "SU": "Аэрофлот", "TK": "Turkish Airlines", "S7": "S7 Airlines",
-    "U6": "Уральские авиалинии", "DP": "Победа", "WZ": "Red Wings",
-    "2S": "Southwind", 
+    # Российские авиакомпании
+    "SU": "Аэрофлот",
+    "S7": "S7 Airlines",
+    "U6": "Уральские авиалинии",
+    "DP": "Победа",
+    "WZ": "Red Wings",
+    "2S": "Southwind",
+    "N4": "Nordwind Airlines",
+    "EO": "Pegas Fly",
+    "D2": "Severstal Air",
+    "Y7": "NordStar Airlines",
+    "B2": "Белавиа",
+    "5N": "Smartavia",
+    "ZF": "Азимут",
+    "I8": "Ижавиа",
+    
+    # Международные авиакомпании
+    "TK": "Turkish Airlines",
+    "LH": "Lufthansa",
+    "AF": "Air France",
+    "BA": "British Airways",
+    "KL": "KLM",
+    "AZ": "Alitalia",
+    "EY": "Etihad Airways",
+    "EK": "Emirates",
+    "QR": "Qatar Airways",
+    "CX": "Cathay Pacific",
+    "SQ": "Singapore Airlines",
+    "JL": "Japan Airlines",
+    "KE": "Korean Air",
+    "TG": "Thai Airways",
+    "QF": "Qantas",
+    
+    # Бюджетные перевозчики
+    "FR": "Ryanair",
+    "U2": "easyJet",
+    "TR": "Scoot",
+    "AK": "AirAsia",
+    "FV": "Rossiya Airlines",
+    "DV": "SCAT Airlines",
+    "5F": "Fly Arna",
+    
+    # Постсоветское пространство
+    "HY": "Uzbekistan Airways",
+    "KC": "Air Astana",
+    "A9": "Georgian Airways",
+    "5L": "FlyArystan",
+    "JU": "Air Serbia",
+    "BT": "Air Baltic",
+    
+    # Чартерные операторы
+    "XU": "South East Asian Airlines",
+    "VQ": "VQ Aviation",
+    "3O": "Air Arabia Maroc",
+    
+    # Грузовые авиалинии
+    "RU": "AirBridgeCargo",
+    "K4": "Kalitta Air",
+    "5Y": "Atlas Air"
 }
 
 
+
 CITY_NAMES_TO_IATA = {
+    # Российские города
     "москва": "MOW", "санкт-петербург": "LED", "казань": "KZN",
     "екатеринбург": "SVX", "новосибирск": "OVB", "сочи": "AER",
     "краснодар": "KRR", "уфа": "UFA", "самара": "KUF",
     "ростов-на-дону": "ROV", "волгоград": "VOG", "пермь": "PEE",
     "воронеж": "VOZ", "омск": "OMS", "красноярск": "KJA",
+    "иркутск": "IKT", "владивосток": "VVO", "хабаровск": "KHV",
+    "калининград": "KGD", "мурманск": "MMK", "астрахань": "ASF",
+    "белгород": "EGO", "тюмень": "TJM", "оренбург": "REN", "пенза": "PEZ",
+    
+    # Международные направления (СНГ/Азия)
     "стамбул": "IST", "анталья": "AYT", "дубай": "DXB",
     "тегеран": "IKA", "ереван": "EVN", "баку": "GYD",
-    "ташкент": "TAS", "алматы": "ALA", "нью-йорк": "NYC",
+    "ташкент": "TAS", "алматы": "ALA", "бишкек": "FRU",
+    "душанбе": "DYU", "астана": "NQZ", "киев": "IEV",
+    "минск": "MSQ", "ташкент": "TAS", "ашхабад": "ASB",
+    
+    # Европа
     "лондон": "LON", "париж": "PAR", "берлин": "BER",
-    "рим": "ROM", "токио": "TYO", "пекин": "BJS",
+    "рим": "ROM", "мадрид": "MAD", "барселона": "BCN",
+    "милан": "MIL", "вена": "VIE", "прага": "PRG",
+    "варшава": "WAW", "будапешт": "BUD", "амстердам": "AMS",
+    "брюссель": "BRU", "афины": "ATH", "хельсинки": "HEL",
+    
+    # Азия
+    "токио": "TYO", "пекин": "BJS", "шанхай": "SHA",
+    "сеул": "SEL", "бангкок": "BKK", "сингапур": "SIN",
+    "куала-лумпур": "KUL", "джакарта": "CGK", "манила": "MNL",
+    "дели": "DEL", "мумбаи": "BOM", "дублин": "DUB",
+    
+    # Америка
+    "нью-йорк": "NYC", "лос-анджелес": "LAX", "майами": "MIA",
+    "чикаго": "CHI", "торонто": "YYZ", "мехико": "MEX",
+    "сан-паулу": "GRU", "рио-де-жанейро": "GIG", "буэнос-айрес": "EZE",
+    
+    # Ближний Восток
+    "телявив": "TLV", "эль-кувейт": "KWI", "доха": "DOH",
+    "эр-рияд": "RUH", "джидда": "JED", "мускат": "MCT",
+    
+    # Африка
+    "каир": "CAI", "йоханнесбург": "JNB", "найроби": "NBO",
+    "касабланка": "CMN", "дагер": "DKR", "аккра": "ACC"
 }
+
 
 class FlightRequest(BaseModel):
     origin: str = Field(..., alias="fromCity")
@@ -338,7 +683,7 @@ async def search_flights(request: FlightRequest, raw_request: Request):
 # парсинг отелей
 
 HOTELS_API_URL = "https://engine.hotellook.com/api/v2/cache.json"
-API_TOKEN = "..."
+API_TOKEN = os.getenv("API_TOKEN")
 TIMEOUT = 30
 
 class HotelRequest(BaseModel):
@@ -391,6 +736,7 @@ async def fetch_hotels(params: dict) -> List[dict]:
         return []
 
 def process_hotel(hotel: dict, nights: int) -> Optional[dict]:
+    """Обработка данных отеля"""
     try:
         price = hotel.get('priceAvg') or hotel.get('priceFrom')
         if price is None:
@@ -421,6 +767,7 @@ def process_hotel(hotel: dict, nights: int) -> Optional[dict]:
 
 @app.post("/hotels/search", response_model=List[HotelResponse])
 async def search_hotels(request: HotelRequest):
+    """Поиск отелей"""
     try:
         try:
             check_in = parser.parse(request.check_in).date()
